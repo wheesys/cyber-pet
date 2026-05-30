@@ -1,0 +1,153 @@
+MIT License with Network Service Clause
+
+Copyright (c) 2026 Cyber Pet Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+ADDITIONAL TERMS FOR NETWORK RELAY SERVICE
+================================================================================
+
+The above MIT License applies to all client software components of this project.
+However, the following additional terms apply to the network relay service
+infrastructure and its usage:
+
+1. SCOPE OF ADDITIONAL TERMS
+
+   These additional terms apply to:
+   - Official relay nodes operated by the Cyber Pet Team
+   - The relay node server software and configuration
+   - Any network service infrastructure provided by the project
+
+2. PERMITTED USES
+
+   You are permitted to:
+
+   a) Personal and Educational Use
+      - Use official relay nodes for personal, non-commercial purposes
+      - Use for educational, research, or academic purposes
+      - Deploy private relay nodes for personal use (not publicly accessible)
+
+   b) Development and Testing
+      - Use official relay nodes during software development
+      - Test client applications against official relay nodes
+      - Contribute to the project using official infrastructure
+
+   c) Private Deployment
+      - Deploy your own relay nodes for private networks
+      - Modify relay node software for private use
+      - Run relay nodes within your organization (internal use only)
+
+3. RESTRICTED USES
+
+   The following uses require prior written authorization:
+
+   a) Commercial Operation
+      - Operating public relay nodes as a commercial service
+      - Charging fees for relay node access
+      - Incorporating relay nodes into commercial products
+
+   b) Large-Scale Deployment
+      - Operating relay nodes serving more than 1,000 concurrent users
+      - Providing relay services to third-party applications
+      - Running relay infrastructure as a platform service
+
+   c) Competitive Services
+      - Using official relay nodes to support competing products
+      - Reverse-engineering relay protocols for competing services
+      - Building commercial services that depend on official infrastructure
+
+4. USAGE TERMS FOR OFFICIAL RELAY NODES
+
+   When using official relay nodes, you agree to:
+
+   a) Acceptable Use
+      - Use relay nodes only for legitimate peer-to-peer communication
+      - Comply with all applicable laws and regulations
+      - Respect bandwidth and resource limitations
+
+   b) Prohibited Activities
+      - Transmitting illegal, harmful, or malicious content
+      - Conducting DDoS attacks or network abuse
+      - Circumventing access controls or rate limits
+      - Using relay nodes for cryptocurrency mining or similar activities
+      - Transmitting spam, malware, or unauthorized advertisements
+
+   c) Service Availability
+      - Official relay nodes are provided "as-is" without guarantees
+      - The project reserves the right to modify or discontinue services
+      - Access may be restricted or terminated for policy violations
+      - No SLA or uptime guarantees are provided
+
+5. AUTHORIZATION PROCESS
+
+   To obtain authorization for restricted uses:
+
+   - Submit a written request via GitHub Issues
+   - Describe your intended use case and scale
+   - Provide technical details of your deployment
+   - Allow 30 days for review and response
+
+   Authorization may be granted with or without conditions, or denied at
+   the project's sole discretion.
+
+6. ENFORCEMENT
+
+   Violation of these additional terms may result in:
+
+   - Immediate termination of relay node access
+   - Blocking of IP addresses or peer IDs
+   - Legal action for damages or injunctive relief
+   - Reporting to relevant authorities for illegal activities
+
+7. MODIFICATIONS
+
+   The Cyber Pet Team reserves the right to modify these additional terms
+   at any time. Continued use of official relay nodes after modifications
+   constitutes acceptance of the updated terms.
+
+8. CONTACT
+
+   For questions, authorization requests, or to report violations:
+   - GitHub Issues: https://github.com/wheesys/cyber-pet/issues
+
+9. SEVERABILITY
+
+   If any provision of these additional terms is found to be unenforceable,
+   the remaining provisions shall remain in full force and effect.
+
+10. GOVERNING LAW
+
+    These additional terms shall be governed by the laws of the People's
+    Republic of China, without regard to conflict of law principles.
+
+================================================================================
+SUMMARY
+================================================================================
+
+Client Software:     MIT License (fully open source)
+Relay Node Software: MIT License (open source, but commercial operation restricted)
+Official Relay Nodes: Usage subject to additional terms above
+
+For most users: You can freely use the client software and official relay nodes
+for personal purposes. If you want to run a commercial relay service, please
+contact us for authorization.
+
+================================================================================
+
