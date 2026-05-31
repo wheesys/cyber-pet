@@ -81,7 +81,11 @@ describe('BehaviorController', () => {
   });
 
   it('窗口过小时位置不会出现 NaN 或越界', () => {
-    const ctrl = new BehaviorController('playful', { width: 20, height: 20 }, seqRng([0.99, 0.99]));
+    const ctrl = new BehaviorController(
+      'playful',
+      { width: 20, height: 20 },
+      seqRng([0.99, 0.99])
+    );
     const target = makeTarget(10, 10);
     ctrl.poke(target);
     for (let i = 0; i < 30; i += 1) {

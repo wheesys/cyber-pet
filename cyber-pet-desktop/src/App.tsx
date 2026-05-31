@@ -45,7 +45,10 @@ function App() {
         // React 18 StrictMode 下 effect 会执行两次，若已卸载则跳过添加。
         if (disposed) return;
         // 启用自主行为（autonomous 默认 true），性格 playful 让宠物更活跃。
-        engine.addPet(PLACEHOLDER_PET_ID, { color: 0x6ab7ff, personality: 'playful' });
+        engine.addPet(PLACEHOLDER_PET_ID, {
+          color: 0x6ab7ff,
+          personality: 'playful',
+        });
       })
       .catch((err) => console.error('Pixi 引擎初始化失败:', err));
 

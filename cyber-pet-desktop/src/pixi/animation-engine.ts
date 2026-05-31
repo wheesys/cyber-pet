@@ -90,7 +90,11 @@ export class AnimationEngine {
    * @returns 创建的精灵，便于调用方进一步操控。
    */
   addPet(petId: string, options: AddPetOptions = {}): PetSprite {
-    const { personality = 'calm', autonomous = true, ...spriteConfig } = options;
+    const {
+      personality = 'calm',
+      autonomous = true,
+      ...spriteConfig
+    } = options;
 
     const sprite = new PetSprite(spriteConfig);
     sprite.x = this.app.screen.width / 2;
