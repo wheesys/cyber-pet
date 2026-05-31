@@ -296,6 +296,24 @@ pub fn disable_p2p(p2p: State<'_, P2pState>) -> Result<(), String> {
     p2p.disable()
 }
 
+/// 获取当前系统进程列表（按 CPU 降序，最多 50 个）。
+#[tauri::command]
+pub fn get_processes() -> Vec<tools::ProcessInfo> {
+    tools::get_processes()
+}
+
+/// 发送系统通知。
+#[tauri::command]
+pub fn send_notification(app: AppHandle, title: String, body: String) -> Result<(), String> {
+    use tauri_plugin_notification::NotificationExt;
+    app.notification()
+        .builder()
+        .title(&title)
+        .body(&body)
+        .show()
+        .map_err(|e| format!("发送通知失败: {e}"))
+}
+
 // ── 事件 payload ──
 
 /// `pets-changed` 事件的 payload。

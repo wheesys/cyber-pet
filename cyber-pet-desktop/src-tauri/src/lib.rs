@@ -39,6 +39,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(Mutex::new(app_config))
         .manage(Mutex::new(ai_config))
         .manage(Mutex::new(cost_tracker))
@@ -79,6 +80,8 @@ pub fn run() {
             commands::save_chat_message,
             commands::get_chat_history,
             commands::clear_chat_history,
+            commands::get_processes,
+            commands::send_notification,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

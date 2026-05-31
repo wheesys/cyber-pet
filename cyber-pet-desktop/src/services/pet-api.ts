@@ -153,3 +153,28 @@ export async function getChatHistory(
 export async function clearChatHistory(petId: number): Promise<number> {
   return invoke<number>('clear_chat_history', { petId });
 }
+
+// ── 进程列表（阶段7补充） ──
+
+/** 进程信息。 */
+export interface ProcessInfo {
+  pid: number;
+  name: string;
+  cpu_percent: number;
+  memory_mb: number;
+}
+
+/** 获取当前系统进程列表。 */
+export async function getProcesses(): Promise<ProcessInfo[]> {
+  return invoke<ProcessInfo[]>('get_processes');
+}
+
+// ── 系统通知（阶段7补充） ──
+
+/** 发送系统通知（OS 原生通知渠道）。 */
+export async function sendNotification(
+  title: string,
+  body: string,
+): Promise<void> {
+  return invoke<void>('send_notification', { title, body });
+}

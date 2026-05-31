@@ -34,6 +34,7 @@ function App() {
   } | null>(null);
   const [chatting, setChatting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [windowFocused, setWindowFocused] = useState(true);
 
   // 启动时加载应用配置。
   useEffect(() => {
@@ -136,6 +137,44 @@ function App() {
     };
   }, [addPetToStage]);
 
+  // 监听窗口焦点状态，用于通知渠道切换。
+  useEffect(() => {
+    let unlistenFocus: UnlistenFn | undefined;
+    let unlistenBlur: UnlistenFn | undefined;
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen<boolean>('tauri://focus', () => setWindowFocused(true)).then(
+        (fn) => {
+          unlistenFocus = fn;
+        },
+      );
+      listen<boolean>('tauri://blur', () => setWindowFocused(false)).then(
+        (fn) => {
+          unlistenBlur = fn;
+        },
+      );
+    });
+    return () => {
+      unlistenFocus?.();
+      unlistenBlur?.();
+    };
+  }, []);
+
+  /** 发送提醒：聚焦用 Toast，失焦用系统通知。 */
+  const notify = async (title: string, message: string) => {
+    if (windowFocused) {
+      setToast(message);
+    } else {
+      try {
+        const { sendNotification } = await import(
+          './services/pet-api'
+        );
+        await sendNotification(title, message);
+      } catch {
+        // 通知失败降级，静默忽略。
+      }
+    }
+  };
+
   // 按下宠物本体即交由系统接管窗口拖拽。
   const handlePointerDown = async (e: React.PointerEvent) => {
     if (e.button !== 0) return;
@@ -161,7 +200,7 @@ function App() {
     if (Math.random() < 0.1 && activePetIds.length > 1) {
       const gifter = petsRef.current.find((p) => p.id !== activePetIds[0]);
       if (gifter) {
-        setToast(`🎁 「${gifter.name}」送了你一份礼物！`);
+        notify('🎁 礼物', `「${gifter.name}」送了你一份礼物！`);
       }
     }
   };
