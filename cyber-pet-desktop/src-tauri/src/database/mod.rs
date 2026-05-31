@@ -16,6 +16,16 @@ use rusqlite::{params, Connection};
 use crate::paths;
 use crate::pet::{NewPet, Pet, PetState, Personality, PetType};
 
+/// 对话消息记录。
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ChatMessage {
+    pub id: Option<i64>,
+    pub pet_id: i64,
+    pub role: String,
+    pub content: String,
+    pub created_at: Option<String>,
+}
+
 /// 数据库文件名。
 const DB_FILE: &str = "cyber-pet.db";
 
@@ -246,6 +256,64 @@ impl Database {
         .map_err(|e| format!("更新宠物状态失败: {e}"))?;
         Ok(())
     }
+
+    /// 保存一条对话消息，返回自增 id。
+    pub fn save_message(&self, pet_id: i64, role: &str, content: &str) -> Result<i64, String> {
+        let conn = self.conn.lock().map_err(lock_err)?;
+        conn.execute(
+            "INSERT INTO chat_messages (pet_id, role, content) VALUES (?1, ?2, ?3)",
+            rusqlite::params![pet_id, role, content],
+        )
+        .map_err(|e| format!("保存消息失败: {e}"))?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    /// 获取指定宠物的最近 N 条消息（按时间正序）。
+    pub fn get_messages(&self, pet_id: i64, limit: i64) -> Result<Vec<ChatMessage>, String> {
+        let conn = self.conn.lock().map_err(lock_err)?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, pet_id, role, content, created_at
+                 FROM (
+                     SELECT id, pet_id, role, content, created_at
+                     FROM chat_messages
+                     WHERE pet_id = ?1
+                     ORDER BY created_at DESC, id DESC
+                     LIMIT ?2
+                 ) ORDER BY created_at ASC, id ASC",
+            )
+            .map_err(|e| format!("准备查询失败: {e}"))?;
+
+        let rows = stmt
+            .query_map(rusqlite::params![pet_id, limit], |row| {
+                Ok(ChatMessage {
+                    id: Some(row.get(0)?),
+                    pet_id: row.get(1)?,
+                    role: row.get(2)?,
+                    content: row.get(3)?,
+                    created_at: row.get(4)?,
+                })
+            })
+            .map_err(|e| format!("查询消息失败: {e}"))?;
+
+        let mut msgs = Vec::new();
+        for r in rows {
+            msgs.push(r.map_err(|e| format!("读取消息行失败: {e}"))?);
+        }
+        Ok(msgs)
+    }
+
+    /// 清空指定宠物的全部对话历史，返回删除条数。
+    pub fn clear_history(&self, pet_id: i64) -> Result<usize, String> {
+        let conn = self.conn.lock().map_err(lock_err)?;
+        let affected = conn
+            .execute(
+                "DELETE FROM chat_messages WHERE pet_id = ?1",
+                rusqlite::params![pet_id],
+            )
+            .map_err(|e| format!("清除历史失败: {e}"))?;
+        Ok(affected)
+    }
 }
 
 /// 应用 v1 迁移：创建 pets / pet_states 表及索引。
@@ -444,6 +512,58 @@ mod tests {
         assert_eq!(fetched.position_x, 120.5);
         assert_eq!(fetched.current_action, "walk");
         assert_eq!(fetched.mood, 70);
+    }
+
+    #[test]
+    fn save_and_get_messages() {
+        let db = memory_db();
+        let pet = db.create_pet(&sample_pet()).expect("创建失败");
+        let pid = pet.id.unwrap();
+
+        let id1 = db.save_message(pid, "user", "你好").expect("保存失败");
+        let id2 = db.save_message(pid, "assistant", "你好呀~").expect("保存失败");
+        assert!(id2 > id1);
+
+        let msgs = db.get_messages(pid, 50).expect("查询失败");
+        assert_eq!(msgs.len(), 2);
+        assert_eq!(msgs[0].role, "user");
+        assert_eq!(msgs[0].content, "你好");
+        assert_eq!(msgs[1].role, "assistant");
+        assert!(msgs[0].created_at.is_some());
+    }
+
+    #[test]
+    fn get_messages_respects_limit() {
+        let db = memory_db();
+        let pet = db.create_pet(&sample_pet()).expect("创建失败");
+        let pid = pet.id.unwrap();
+
+        for i in 0..5 {
+            db.save_message(pid, "user", &format!("msg_{i}")).unwrap();
+        }
+        let msgs = db.get_messages(pid, 3).expect("查询失败");
+        assert_eq!(msgs.len(), 3);
+    }
+
+    #[test]
+    fn clear_history_removes_all() {
+        let db = memory_db();
+        let pet = db.create_pet(&sample_pet()).expect("创建失败");
+        let pid = pet.id.unwrap();
+
+        db.save_message(pid, "user", "a").unwrap();
+        db.save_message(pid, "assistant", "b").unwrap();
+
+        let removed = db.clear_history(pid).expect("清除失败");
+        assert_eq!(removed, 2);
+        assert!(db.get_messages(pid, 10).unwrap().is_empty());
+    }
+
+    #[test]
+    fn get_messages_empty_pet_returns_empty() {
+        let db = memory_db();
+        let msgs = db.get_messages(999, 10).expect("查询失败");
+        assert!(msgs.is_empty());
     }
 
     #[test]
