@@ -7,6 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# 便携模式运行时数据目录（配置/日志/数据库），删除即彻底卸载
+data/
+
 node_modules
 dist
 dist-ssr

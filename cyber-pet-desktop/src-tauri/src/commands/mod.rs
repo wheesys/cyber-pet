@@ -3,10 +3,14 @@
 //! 职责：聚合暴露给前端的 Tauri Command（invoke 入口）。
 //! 参考《05-架构设计文档》7.1 Tauri 命令接口。
 //!
-//! 阶段4.1 实现范围：窗口拖拽、置顶、定位。
+//! 阶段4 实现范围：窗口拖拽/置顶/定位、应用配置读写。
 //! 后续：宠物管理命令（阶段5）、P2P 命令（阶段11，默认关闭）。
 
-use tauri::{PhysicalPosition, WebviewWindow};
+use std::sync::Mutex;
+
+use tauri::{PhysicalPosition, State, WebviewWindow};
+
+use crate::config::AppConfig;
 
 /// 开始拖拽当前窗口。
 ///
@@ -29,4 +33,22 @@ pub fn set_window_position(window: WebviewWindow, x: i32, y: i32) -> Result<(), 
     window
         .set_position(PhysicalPosition::new(x, y))
         .map_err(|e| e.to_string())
+}
+
+/// 读取当前应用配置。
+#[tauri::command]
+pub fn get_config(config: State<'_, Mutex<AppConfig>>) -> Result<AppConfig, String> {
+    config
+        .lock()
+        .map(|c| c.clone())
+        .map_err(|e| format!("配置锁获取失败: {e}"))
+}
+
+/// 更新并持久化应用配置。
+#[tauri::command]
+pub fn set_config(config: State<'_, Mutex<AppConfig>>, new_config: AppConfig) -> Result<(), String> {
+    new_config.save()?;
+    let mut guard = config.lock().map_err(|e| format!("配置锁获取失败: {e}"))?;
+    *guard = new_config;
+    Ok(())
 }
