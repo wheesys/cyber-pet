@@ -23,6 +23,15 @@
         "shadow": false,
         "skipTaskbar": false,
         "center": true
+      },
+      {
+        "label": "manager",
+        "title": "宠物管理",
+        "width": 800,
+        "height": 600,
+        "resizable": true,
+        "center": true,
+        "visible": false
       }
     ],
     "macOSPrivateApi": true,

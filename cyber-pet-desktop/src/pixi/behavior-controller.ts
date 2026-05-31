@@ -79,7 +79,11 @@ export class BehaviorController {
   private targetX = 0;
   private targetY = 0;
 
-  constructor(personality: Personality, bounds: Bounds, rng: Rng = Math.random) {
+  constructor(
+    personality: Personality,
+    bounds: Bounds,
+    rng: Rng = Math.random
+  ) {
     this.personality = personality;
     this.bounds = bounds;
     this.rng = rng;
@@ -108,6 +112,17 @@ export class BehaviorController {
     target.setAction('walk');
     this.pickTarget();
     this.timer = MIN_DECISION_INTERVAL;
+  }
+
+  /** 对附近宠物互动的反应：走向目标位置。 */
+  reactTo(target: BehaviorTarget, x: number, y: number): void {
+    this.targetX = x;
+    this.targetY = y;
+    const action = target.getAction();
+    if (action === 'idle' || action === 'sit' || action === 'walk') {
+      target.setAction('walk');
+      this.timer = MIN_DECISION_INTERVAL * 2;
+    }
   }
 
   /** 重新决策当前行为，并在移动类行为下选定目标点。 */
@@ -181,7 +196,10 @@ export class BehaviorController {
 
   /** 随机决策间隔（秒）。 */
   private randomInterval(): number {
-    return MIN_DECISION_INTERVAL + this.rng() * (MAX_DECISION_INTERVAL - MIN_DECISION_INTERVAL);
+    return (
+      MIN_DECISION_INTERVAL +
+      this.rng() * (MAX_DECISION_INTERVAL - MIN_DECISION_INTERVAL)
+    );
   }
 }
 

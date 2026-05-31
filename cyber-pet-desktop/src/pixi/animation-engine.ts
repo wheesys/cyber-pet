@@ -121,6 +121,31 @@ export class AnimationEngine {
     instance.behavior?.poke(instance.sprite);
   }
 
+  /** 让周围宠物靠近目标宠物（互动反应）。 */
+  interactNearby(targetId: string): void {
+    const target = this.pets.get(targetId);
+    if (!target) return;
+    const tx = target.sprite.x;
+    const ty = target.sprite.y;
+    this.pets.forEach((inst, id) => {
+      if (id === targetId) return;
+      const dx = inst.sprite.x - tx;
+      const dy = inst.sprite.y - ty;
+      if (Math.hypot(dx, dy) < 200) {
+        inst.behavior?.reactTo(
+          inst.sprite,
+          tx + (Math.random() - 0.5) * 60,
+          ty + (Math.random() - 0.5) * 60
+        );
+      }
+    });
+  }
+
+  /** 获取所有活跃宠物 ID。 */
+  getPetIds(): string[] {
+    return Array.from(this.pets.keys());
+  }
+
   /** 移除一只宠物并释放其资源。 */
   removePet(petId: string): void {
     const instance = this.pets.get(petId);

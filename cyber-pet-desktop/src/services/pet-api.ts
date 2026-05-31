@@ -136,7 +136,7 @@ export interface ChatMessage {
 export async function saveChatMessage(
   petId: number,
   role: string,
-  content: string,
+  content: string
 ): Promise<number> {
   return invoke<number>('save_chat_message', { petId, role, content });
 }
@@ -144,7 +144,7 @@ export async function saveChatMessage(
 /** 获取指定宠物的最近 N 条对话历史。 */
 export async function getChatHistory(
   petId: number,
-  limit: number = 50,
+  limit: number = 50
 ): Promise<ChatMessage[]> {
   return invoke<ChatMessage[]>('get_chat_history', { petId, limit });
 }
@@ -174,7 +174,7 @@ export async function getProcesses(): Promise<ProcessInfo[]> {
 /** 发送系统通知（OS 原生通知渠道）。 */
 export async function sendNotification(
   title: string,
-  body: string,
+  body: string
 ): Promise<void> {
   return invoke<void>('send_notification', { title, body });
 }

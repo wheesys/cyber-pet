@@ -95,7 +95,7 @@ export class AIService {
     personality: string,
     petName: string,
     userMessage: string,
-    petId?: number,
+    petId?: number
   ): AsyncGenerator<string> {
     await this.init();
 
@@ -186,7 +186,7 @@ export class AIService {
 function buildPrompt(
   personality: string,
   petName: string,
-  history?: { role: string; content: string }[],
+  history?: { role: string; content: string }[]
 ): string {
   const base = `你是一只桌面宠物「${petName}」。`;
   const map: Record<string, string> = {

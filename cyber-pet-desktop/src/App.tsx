@@ -145,12 +145,12 @@ function App() {
       listen<boolean>('tauri://focus', () => setWindowFocused(true)).then(
         (fn) => {
           unlistenFocus = fn;
-        },
+        }
       );
       listen<boolean>('tauri://blur', () => setWindowFocused(false)).then(
         (fn) => {
           unlistenBlur = fn;
-        },
+        }
       );
     });
     return () => {
@@ -165,9 +165,7 @@ function App() {
       setToast(message);
     } else {
       try {
-        const { sendNotification } = await import(
-          './services/pet-api'
-        );
+        const { sendNotification } = await import('./services/pet-api');
         await sendNotification(title, message);
       } catch {
         // 通知失败降级，静默忽略。
@@ -227,7 +225,7 @@ function App() {
         pet.personality,
         pet.name,
         message,
-        pet.id ?? undefined,
+        pet.id ?? undefined
       )) {
         fullText += chunk;
         setBubble({ text: chunk, x: baseX, y: baseY });

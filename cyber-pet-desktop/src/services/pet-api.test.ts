@@ -129,7 +129,7 @@ describe('AIClient', () => {
       chunks
         .map(
           (c) =>
-            `data: ${JSON.stringify({ choices: [{ delta: { content: c } }] })}\n\n`,
+            `data: ${JSON.stringify({ choices: [{ delta: { content: c } }] })}\n\n`
         )
         .join('') + 'data: [DONE]\n\n';
 

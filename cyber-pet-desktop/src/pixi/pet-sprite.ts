@@ -94,7 +94,8 @@ export class PetSprite extends Container {
         // 移动感：左右摆动 + 上下颠簸，run 频率更高。
         const freq = this.action === 'run' ? 12 : 6;
         this.rotation = Math.sin(this.elapsed * freq) * 0.08;
-        const bob = Math.abs(Math.sin(this.elapsed * freq)) * (this.size * 0.04);
+        const bob =
+          Math.abs(Math.sin(this.elapsed * freq)) * (this.size * 0.04);
         this.scale.set(1);
         this.body.y = -bob;
         break;

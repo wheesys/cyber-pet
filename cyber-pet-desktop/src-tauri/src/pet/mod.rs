@@ -89,6 +89,14 @@ pub struct NewPet {
     pub avatar_path: Option<String>,
 }
 
+/// 更新宠物的输入参数（仅名称 + 性格，类型不可变）。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdatePet {
+    pub id: i64,
+    pub name: String,
+    pub personality: Personality,
+}
+
 impl PetType {
     /// 转为数据库存储的文本值。
     pub fn as_str(&self) -> &'static str {
