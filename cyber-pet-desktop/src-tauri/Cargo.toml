@@ -30,4 +30,6 @@ tracing-appender = "0.2"
 toml = "0.8"
 # 解析用户主目录（仅安装模式下使用）
 dirs = "5"
+# SQLite：bundled 特性内置 SQLite，无需系统依赖，保持绿色便携
+rusqlite = { version = "0.32", features = ["bundled"] }
 
