@@ -1,0 +1,12 @@
+/* 桌宠透明窗口样式 */
+:root {
+  background-color: transparent !important;
+}
+
+body {
+  background-color: transparent !important;
+}
+
+#root {
+  background-color: transparent !important;
+}
