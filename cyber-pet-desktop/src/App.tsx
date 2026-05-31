@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import './App.css';
 import { AnimationEngine } from './pixi/animation-engine';
-import type { PetAction } from './pixi/pet-sprite';
 
 /** 与后端 AppConfig 对应的配置类型。 */
 interface AppConfig {
@@ -20,7 +19,6 @@ function App() {
   const stageRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<AnimationEngine | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
-  const [action, setAction] = useState<PetAction>('idle');
 
   // 启动时加载应用配置，验证 get_config 链路。
   useEffect(() => {
@@ -32,7 +30,7 @@ function App() {
       .catch((err) => console.error('加载配置失败:', err));
   }, []);
 
-  // 初始化 Pixi 动画引擎并添加占位宠物。
+  // 初始化 Pixi 动画引擎并添加自主行为宠物。
   useEffect(() => {
     const container = stageRef.current;
     if (!container) return;
@@ -46,7 +44,8 @@ function App() {
       .then(() => {
         // React 18 StrictMode 下 effect 会执行两次，若已卸载则跳过添加。
         if (disposed) return;
-        engine.addPet(PLACEHOLDER_PET_ID, { color: 0x6ab7ff });
+        // 启用自主行为（autonomous 默认 true），性格 playful 让宠物更活跃。
+        engine.addPet(PLACEHOLDER_PET_ID, { color: 0x6ab7ff, personality: 'playful' });
       })
       .catch((err) => console.error('Pixi 引擎初始化失败:', err));
 
@@ -67,11 +66,9 @@ function App() {
     }
   };
 
-  // 点击切换 idle/walk 动作，验证动画状态机链路。
+  // 点击戳宠物，触发交互反应（切到 walk 并朝新目标移动）。
   const handleClick = () => {
-    const next: PetAction = action === 'idle' ? 'walk' : 'idle';
-    setAction(next);
-    engineRef.current?.getPet(PLACEHOLDER_PET_ID)?.setAction(next);
+    engineRef.current?.pokePet(PLACEHOLDER_PET_ID);
   };
 
   return (
@@ -84,7 +81,7 @@ function App() {
         onClick={handleClick}
         role="img"
         aria-label="桌面宠物"
-        title={config ? `主题: ${config.theme} | 动作: ${action}` : '加载中…'}
+        title={config ? `主题: ${config.theme}` : '加载中…'}
       />
     </div>
   );
