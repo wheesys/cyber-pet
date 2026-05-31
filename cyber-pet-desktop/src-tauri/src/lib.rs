@@ -1,29 +1,34 @@
 //! Cyber Pet 桌面端应用入口（库）。
-//!
-//! 负责装配 Tauri 应用：初始化日志、加载配置、打开数据库、注册命令、初始化系统托盘。
 
+mod ai_cost;
 mod commands;
 mod config;
 mod database;
 mod logging;
+mod p2p;
 mod paths;
+mod permission;
 mod pet;
+mod tools;
 mod window;
 
 use std::sync::Mutex;
 
-use config::AppConfig;
+use ai_cost::AiCostTracker;
+use config::{ai::AiConfig, AppConfig};
 use database::Database;
+use p2p::P2pState;
+use permission::PendingRequests;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // 日志须最先初始化，guard 存入 state 以保证退出前刷新缓冲。
     let log_guard = logging::init();
-
-    // 加载应用配置（首次启动生成默认值）。
     let app_config = AppConfig::load();
+    let ai_config = AiConfig::load();
+    let cost_tracker = AiCostTracker::load();
+    let pending_requests = PendingRequests::default();
+    let p2p_state = P2pState::new();
 
-    // 打开数据库并应用迁移；失败则属致命错误，直接退出。
     let database = match Database::open() {
         Ok(db) => db,
         Err(e) => {
@@ -35,6 +40,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(app_config))
+        .manage(Mutex::new(ai_config))
+        .manage(Mutex::new(cost_tracker))
+        .manage(pending_requests)
+        .manage(p2p_state)
         .manage(log_guard)
         .manage(database)
         .setup(|app| {
@@ -50,8 +59,26 @@ pub fn run() {
             commands::get_pets,
             commands::create_pet,
             commands::delete_pet,
+            commands::update_pet,
             commands::get_pet_state,
             commands::update_pet_state,
+            commands::open_manager,
+            commands::get_ai_config,
+            commands::set_ai_config,
+            commands::get_ai_cost,
+            commands::record_ai_call,
+            commands::request_permission,
+            commands::confirm_permission,
+            commands::list_files,
+            commands::search_files,
+            commands::create_empty_files,
+            commands::get_system_info,
+            commands::get_p2p_status,
+            commands::enable_p2p,
+            commands::disable_p2p,
+            commands::save_chat_message,
+            commands::get_chat_history,
+            commands::clear_chat_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
