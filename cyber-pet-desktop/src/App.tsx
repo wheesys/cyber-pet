@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import './App.css';
 import { AnimationEngine } from './pixi/animation-engine';
+import { ChatBubble } from './components/ChatBubble';
+import { ChatInput } from './components/ChatInput';
+import { Toast } from './components/Toast';
+import { aiService } from './services/ai-service';
+import { getPets, type Pet, type PetsChangedEvent } from './services/pet-api';
 
 /** 与后端 AppConfig 对应的配置类型。 */
 interface AppConfig {
@@ -12,15 +18,24 @@ interface AppConfig {
   p2p_enabled: boolean;
 }
 
-/** 占位宠物的本地 id（阶段5.2 单宠物验证；多宠物见阶段10）。 */
-const PLACEHOLDER_PET_ID = 'placeholder';
+/** 活跃宠物 ID 列表（舞台级别状态，用于 poke 操作选取）。 */
+let activePetIds: number[] = [];
 
 function App() {
   const stageRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<AnimationEngine | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
+  const [hasPets, setHasPets] = useState(false);
+  const [showInput, setShowInput] = useState(false);
+  const [bubble, setBubble] = useState<{
+    text: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [chatting, setChatting] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
-  // 启动时加载应用配置，验证 get_config 链路。
+  // 启动时加载应用配置。
   useEffect(() => {
     invoke<AppConfig>('get_config')
       .then((cfg) => {
@@ -30,7 +45,23 @@ function App() {
       .catch((err) => console.error('加载配置失败:', err));
   }, []);
 
-  // 初始化 Pixi 动画引擎并添加自主行为宠物。
+  // 添加宠物到舞台（DRY：从 Pet 记录创建精灵）。
+  const addPetToStage = useCallback((engine: AnimationEngine, pet: Pet) => {
+    const petId = String(pet.id!);
+    // 根据类型分配颜色（后续形象资源接入后替换为精灵图）。
+    const colorMap: Record<string, number> = {
+      cat: 0xf9e2af,
+      dog: 0xa6e3a1,
+      rabbit: 0xf5c2e7,
+      custom: 0x89b4fa,
+    };
+    engine.addPet(petId, {
+      color: colorMap[pet.pet_type] ?? 0x89b4fa,
+      personality: pet.personality,
+    });
+  }, []);
+
+  // 初始化 Pixi 动画引擎并从数据库加载宠物。
   useEffect(() => {
     const container = stageRef.current;
     if (!container) return;
@@ -41,14 +72,19 @@ function App() {
 
     engine
       .init(container)
-      .then(() => {
-        // React 18 StrictMode 下 effect 会执行两次，若已卸载则跳过添加。
+      .then(async () => {
         if (disposed) return;
-        // 启用自主行为（autonomous 默认 true），性格 playful 让宠物更活跃。
-        engine.addPet(PLACEHOLDER_PET_ID, {
-          color: 0x6ab7ff,
-          personality: 'playful',
-        });
+
+        // 从数据库加载真实宠物，替换占位逻辑。
+        try {
+          const pets = await getPets();
+          petsRef.current = pets;
+          activePetIds = pets.map((p) => p.id!).filter(Boolean);
+          pets.forEach((pet) => addPetToStage(engine, pet));
+          setHasPets(activePetIds.length > 0);
+        } catch (err) {
+          console.error('加载宠物失败:', err);
+        }
       })
       .catch((err) => console.error('Pixi 引擎初始化失败:', err));
 
@@ -57,9 +93,50 @@ function App() {
       engine.destroy();
       engineRef.current = null;
     };
-  }, []);
+  }, [addPetToStage]);
 
-  // 按下宠物本体即交由系统接管窗口拖拽（性能优于 JS 逐帧定位）。
+  // 监听 `pets-changed` 事件，增量同步舞台。
+  useEffect(() => {
+    let unlisten: UnlistenFn | undefined;
+    listen<PetsChangedEvent>('pets-changed', (event) => {
+      const engine = engineRef.current;
+      if (!engine) return;
+
+      const { kind, pet, id } = event.payload;
+      switch (kind) {
+        case 'created':
+          if (pet && pet.id) {
+            addPetToStage(engine, pet);
+            activePetIds.push(pet.id);
+            petsRef.current = [...petsRef.current, pet];
+            setHasPets(true);
+          }
+          break;
+        case 'deleted':
+          if (id) {
+            engine.removePet(String(id));
+            activePetIds = activePetIds.filter((pid) => pid !== id);
+            petsRef.current = petsRef.current.filter((p) => p.id !== id);
+            setHasPets(activePetIds.length > 0);
+          }
+          break;
+        case 'updated':
+          // 后续可优化为仅更新行为参数，本阶段暂用 remove + add 简化。
+          if (pet && pet.id) {
+            engine.removePet(String(pet.id));
+            addPetToStage(engine, pet);
+          }
+          break;
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      unlisten?.();
+    };
+  }, [addPetToStage]);
+
+  // 按下宠物本体即交由系统接管窗口拖拽。
   const handlePointerDown = async (e: React.PointerEvent) => {
     if (e.button !== 0) return;
     try {
@@ -69,14 +146,69 @@ function App() {
     }
   };
 
-  // 点击戳宠物，触发交互反应（切到 walk 并朝新目标移动）。
+  /** 宠物列表缓存（用于获取性格等属性）。 */
+  const petsRef = useRef<Pet[]>([]);
+
+  // 点击宠物 → 弹出输入框 + 周围宠物靠近 + 偶发礼物。
   const handleClick = () => {
-    engineRef.current?.pokePet(PLACEHOLDER_PET_ID);
+    if (activePetIds.length === 0) return;
+    const petId = String(activePetIds[0]);
+    setShowInput((prev) => !prev);
+    // 触发多宠物互动。
+    engineRef.current?.pokePet(petId);
+    engineRef.current?.interactNearby(petId);
+    // 10% 概率触发礼物通知。
+    if (Math.random() < 0.1 && activePetIds.length > 1) {
+      const gifter = petsRef.current.find((p) => p.id !== activePetIds[0]);
+      if (gifter) {
+        setToast(`🎁 「${gifter.name}」送了你一份礼物！`);
+      }
+    }
+  };
+
+  // 发送消息 → AI 流式回复 → 气泡逐字展示。
+  const handleSend = async (message: string) => {
+    if (activePetIds.length === 0) return;
+    const petId = activePetIds[0];
+    const pet = petsRef.current.find((p) => p.id === petId);
+    const engine = engineRef.current;
+    if (!engine || !pet) return;
+
+    setChatting(true);
+    const sprite = engine.getPet(String(petId));
+    const baseX = sprite?.x ?? 100;
+    const baseY = sprite?.y ?? 100;
+
+    // 先设置空 bubble 占位，后续流式 append。
+    setBubble({ text: '', x: baseX, y: baseY });
+
+    let fullText = '';
+    try {
+      for await (const chunk of aiService.chatStream(
+        pet.personality,
+        pet.name,
+        message,
+        pet.id ?? undefined,
+      )) {
+        fullText += chunk;
+        setBubble({ text: chunk, x: baseX, y: baseY });
+      }
+      // 流结束，成本统计。
+      await invoke('record_ai_call', {
+        tokens: Math.ceil(message.length / 2 + fullText.length / 2),
+      });
+    } catch (err) {
+      setBubble({
+        text: `(AI 请求失败: ${err})`,
+        x: baseX,
+        y: baseY,
+      });
+    }
+    setChatting(false);
   };
 
   return (
     <div className="pet-stage">
-      {/* Pixi 画布容器：承载宠物渲染，自身可拖拽窗口 */}
       <div
         ref={stageRef}
         className="pet-canvas"
@@ -84,7 +216,33 @@ function App() {
         onClick={handleClick}
         role="img"
         aria-label="桌面宠物"
-        title={config ? `主题: ${config.theme}` : '加载中…'}
+        title={
+          config
+            ? `主题: ${config.theme} | ${hasPets ? `${activePetIds.length} 只宠物` : '暂无宠物'}`
+            : '加载中…'
+        }
+      />
+
+      {/* 对话气泡 */}
+      {bubble && (
+        <ChatBubble
+          text={bubble.text}
+          x={bubble.x}
+          y={bubble.y}
+          append={chatting}
+          duration={chatting ? 0 : 5000}
+          onDone={() => setBubble(null)}
+        />
+      )}
+
+      {/* 通知 */}
+      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+
+      {/* 对话输入栏 */}
+      <ChatInput
+        visible={showInput}
+        onSend={handleSend}
+        onClose={() => setShowInput(false)}
       />
     </div>
   );
