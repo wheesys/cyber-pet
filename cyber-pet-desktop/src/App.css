@@ -1,40 +1,33 @@
-/* 桌宠舞台：铺满透明窗口，宠物本体居中 */
+/* 桌宠舞台：铺满透明窗口 */
 .pet-stage {
   width: 100vw;
   height: 100vh;
   margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* 舞台空白处不拦截鼠标，仅宠物本体可交互 */
+  /* 舞台空白处不拦截鼠标，仅画布可交互 */
   pointer-events: none;
   user-select: none;
   overflow: hidden;
 }
 
-/* 宠物本体：当前为占位字符，阶段5 替换为 Pixi.js Sprite */
-.pet {
+/* Pixi 画布容器：铺满舞台，承载宠物渲染并可拖拽窗口 */
+.pet-canvas {
+  width: 100%;
+  height: 100%;
   pointer-events: auto;
   cursor: grab;
-  font-size: 64px;
-  line-height: 1;
-  color: #333;
-  /* 拖拽时由系统接管，禁用文本选中 */
+  /* 拖拽时禁用文本/元素选中 */
   user-select: none;
   -webkit-user-select: none;
-  transition: transform 0.15s ease;
 }
 
-.pet:active {
+.pet-canvas:active {
   cursor: grabbing;
 }
 
-.pet--happy {
-  transform: scale(1.15);
-}
-
-@media (prefers-color-scheme: dark) {
-  .pet {
-    color: #f0f0f0;
-  }
+/* Pixi 注入的 canvas 充满容器，背景透明 */
+.pet-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
 }
