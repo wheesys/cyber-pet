@@ -1,50 +1,34 @@
 import { useState } from 'react';
-import reactLogo from './assets/react.svg';
 import { invoke } from '@tauri-apps/api/core';
 import './App.css';
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState('');
-  const [name, setName] = useState('');
+  // 宠物占位的“情绪”状态，点击切换，用于验证交互链路。
+  const [happy, setHappy] = useState(false);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke('greet', { name }));
-  }
+  // 按下宠物本体即交由系统接管窗口拖拽（性能优于 JS 逐帧定位）。
+  const handlePointerDown = async (e: React.PointerEvent) => {
+    // 仅左键触发拖拽。
+    if (e.button !== 0) return;
+    try {
+      await invoke('start_drag');
+    } catch (err) {
+      console.error('start_drag 失败:', err);
+    }
+  };
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
+    <div className="pet-stage">
+      <div
+        className={`pet${happy ? ' pet--happy' : ''}`}
+        onPointerDown={handlePointerDown}
+        onClick={() => setHappy((v) => !v)}
+        role="img"
+        aria-label="桌面宠物"
       >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+        {happy ? '◕‿◕' : '·_·'}
+      </div>
+    </div>
   );
 }
 
