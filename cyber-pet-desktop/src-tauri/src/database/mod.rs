@@ -20,7 +20,7 @@ use crate::pet::{NewPet, Pet, PetState, Personality, PetType};
 const DB_FILE: &str = "cyber-pet.db";
 
 /// 当前 Schema 目标版本。每次新增迁移时 +1。
-const TARGET_SCHEMA_VERSION: i64 = 1;
+const TARGET_SCHEMA_VERSION: i64 = 2;
 
 /// 数据库句柄，通过 `Mutex` 串行化访问，作为 Tauri state 管理。
 pub struct Database {
@@ -75,7 +75,9 @@ impl Database {
         if current < 1 {
             apply_v1(&conn)?;
         }
-        // 未来迁移：if current < 2 { apply_v2(&conn)?; } ...
+        if current < 2 {
+            apply_v2(&conn)?;
+        }
 
         tracing::info!(from = current, to = TARGET_SCHEMA_VERSION, "数据库迁移完成");
         Ok(())
@@ -162,6 +164,26 @@ impl Database {
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(format!("查询宠物失败: {e}")),
         }
+    }
+
+    /// 更新宠物名称与性格（类型不可变，字段级验证由命令层负责）。
+    pub fn update_pet(&self, pet_id: i64, name: &str, personality: &str) -> Result<Pet, String> {
+        let conn = self.conn.lock().map_err(lock_err)?;
+        let affected = conn
+            .execute(
+                "UPDATE pets SET name = ?1, personality = ?2, updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?3 AND is_active = 1",
+                params![name, personality, pet_id],
+            )
+            .map_err(|e| format!("更新宠物失败: {e}"))?;
+
+        if affected == 0 {
+            return Err("宠物不存在或已删除".to_string());
+        }
+        drop(conn);
+
+        self.get_pet(pet_id)?
+            .ok_or_else(|| "更新后未能读回宠物".to_string())
     }
 
     /// 软删除宠物（标记 is_active = 0，保留历史）。
@@ -272,6 +294,25 @@ fn apply_v1(conn: &Connection) -> Result<(), String> {
     .map_err(|e| format!("应用 v1 迁移失败: {e}"))
 }
 
+/// 应用 v2 迁移：创建 chat_messages 表及索引（阶段6补充）。
+fn apply_v2(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "BEGIN;
+         CREATE TABLE chat_messages (
+             id INTEGER PRIMARY KEY AUTOINCREMENT,
+             pet_id INTEGER NOT NULL,
+             role TEXT NOT NULL CHECK(role IN ('user','assistant')),
+             content TEXT NOT NULL,
+             created_at DATETIME NOT NULL DEFAULT (datetime('now'))
+         );
+         CREATE INDEX idx_chat_messages_pet_id ON chat_messages(pet_id, created_at);
+
+         INSERT INTO schema_version (version, description) VALUES (2, 'Add chat_messages');
+         COMMIT;",
+    )
+    .map_err(|e| format!("应用 v2 迁移失败: {e}"))
+}
+
 /// 将查询行映射为 Pet（pets 表列顺序固定，集中此处避免重复，DRY）。
 fn row_to_pet(row: &rusqlite::Row) -> rusqlite::Result<Pet> {
     let pet_type: String = row.get(2)?;
@@ -359,6 +400,34 @@ mod tests {
     }
 
     #[test]
+    fn update_pet_name_and_personality() {
+        let db = memory_db();
+        let pet = db.create_pet(&sample_pet()).expect("创建失败");
+        let id = pet.id.unwrap();
+
+        let updated = db
+            .update_pet(id, "小黑", "calm")
+            .expect("更新失败");
+        assert_eq!(updated.name, "小黑");
+        assert_eq!(updated.personality, Personality::Calm);
+        // 其他字段不应变化。
+        assert_eq!(updated.pet_type, PetType::Cat);
+        assert_eq!(updated.level, 1);
+
+        // 数据库查询验证持久化。
+        let fetched = db.get_pet(id).expect("查询失败").expect("应存在");
+        assert_eq!(fetched.name, "小黑");
+        assert_eq!(fetched.personality, Personality::Calm);
+    }
+
+    #[test]
+    fn update_pet_not_found() {
+        let db = memory_db();
+        let result = db.update_pet(999, "不存在", "playful");
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn update_state_persists() {
         let db = memory_db();
         let pet = db.create_pet(&sample_pet()).expect("创建失败");
@@ -375,6 +444,34 @@ mod tests {
         assert_eq!(fetched.position_x, 120.5);
         assert_eq!(fetched.current_action, "walk");
         assert_eq!(fetched.mood, 70);
+    }
+
+    #[test]
+    fn v2_migration_creates_chat_messages_table() {
+        let db = memory_db();
+        let conn = db.conn.lock().unwrap();
+
+        // 验证 chat_messages 表存在且有正确的列。
+        conn.prepare("SELECT id, pet_id, role, content, created_at FROM chat_messages LIMIT 0")
+            .expect("chat_messages 表应存在");
+
+        // 验证 NOT NULL 约束（pet_id）。
+        let result = conn.execute(
+            "INSERT INTO chat_messages (pet_id, role, content) VALUES (NULL, 'user', 'test')",
+            [],
+        );
+        assert!(result.is_err(), "pet_id 应拒绝 NULL");
+
+        // 验证 CHECK 约束（role）。
+        let result = conn.execute(
+            "INSERT INTO chat_messages (pet_id, role, content) VALUES (1, 'invalid', 'test')",
+            [],
+        );
+        assert!(result.is_err(), "role 应拒绝非法值");
+
+        // 验证索引可用。
+        conn.execute("SELECT 1 FROM chat_messages WHERE pet_id = 1", [])
+            .expect("pet_id 索引应可用");
     }
 
     #[test]
