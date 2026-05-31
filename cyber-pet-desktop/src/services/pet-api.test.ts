@@ -81,6 +81,37 @@ describe('openManager', () => {
   });
 });
 
+// ── AIService 流式响应测试 ──
+
+import { AIService } from './ai-service';
+
+describe('AIService', () => {
+  it('chatStream yields chunks and caches full response', async () => {
+    const service = new AIService();
+    const mockClient = {
+      chatStream: async function* () {
+        yield 'Hello';
+        yield ' World';
+      },
+      judgeComplexity: async () => 'simple' as const,
+    };
+    (service as any).simple = mockClient;
+    (service as any).scheduler = mockClient;
+    (service as any).initialized = true;
+
+    const chunks: string[] = [];
+    for await (const c of service.chatStream('playful', 'test', 'hi')) {
+      chunks.push(c);
+    }
+
+    expect(chunks).toEqual(['Hello', ' World']);
+    const cached = (service as any).cache.get(
+      'system:你是一只桌面宠物「test」。你古灵精怪、活泼好动，喜欢开玩笑。回复俏皮可爱，适当使用颜文字。|user:hi'
+    );
+    expect(cached).toBe('Hello World');
+  });
+});
+
 // ── AIClient 流式响应测试 ──
 
 import { AIClient } from './ai-client';
