@@ -302,16 +302,24 @@ pub fn get_processes() -> Vec<tools::ProcessInfo> {
     tools::get_processes()
 }
 
-/// 发送系统通知。
+/// 发送系统通知（macOS 交叉编译时降级为空操作）。
 #[tauri::command]
 pub fn send_notification(app: AppHandle, title: String, body: String) -> Result<(), String> {
-    use tauri_plugin_notification::NotificationExt;
-    app.notification()
-        .builder()
-        .title(&title)
-        .body(&body)
-        .show()
-        .map_err(|e| format!("发送通知失败: {e}"))
+    #[cfg(not(target_os = "macos"))]
+    {
+        use tauri_plugin_notification::NotificationExt;
+        app.notification()
+            .builder()
+            .title(&title)
+            .body(&body)
+            .show()
+            .map_err(|e| format!("发送通知失败: {e}"))
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = (app, title, body);
+        Ok(())
+    }
 }
 
 // ── 事件 payload ──

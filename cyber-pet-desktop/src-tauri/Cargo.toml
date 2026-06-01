@@ -5,12 +5,7 @@ description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
-# The `_lib` suffix may seem redundant but it is necessary
-# to make the lib name unique and wouldn't conflict with the bin name.
-# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "cyber_pet_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
@@ -18,32 +13,30 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["macos-private-api", "tray-icon", "image-png"] }
-tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# 日志：tracing 生态 + 文件轮转
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-appender = "0.2"
-# 配置：TOML 格式读写
 toml = "0.8"
-# 异步运行时（oneshot channel 用于权限确认）
 tokio = { version = "1", features = ["sync"] }
-# 解析用户主目录（仅安装模式下使用）
 dirs = "5"
-# SQLite：bundled 特性内置 SQLite，无需系统依赖，保持绿色便携
 rusqlite = { version = "0.32", features = ["bundled"] }
-# 系统信息（进程列表）
 sysinfo = "0.32"
-# 系统通知
+tauri-plugin-opener = "2"
+
+# macOS 专有：含私有 API（通知插件交叉编译需 Apple SDK，仅原生构建可用）
+[target.'cfg(target_os = "macos")'.dependencies]
+tauri = { version = "2", features = ["macos-private-api", "tray-icon", "image-png"] }
+
+# Linux/Windows：不含 macOS 专有特性
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+tauri = { version = "2", features = ["macos-private-api", "tray-icon", "image-png"] }
 tauri-plugin-notification = "2"
 
 [profile.release]
-# 优化二进制体积（绿色便携要求），同时保持合理性能
-opt-level = "s"        # 优化体积优先
-lto = true             # 链接时优化，显著减小体积
-codegen-units = 1      # 单代码生成单元，更激进的优化
-strip = "symbols"      # 去除调试符号
-panic = "abort"        # panic 直接 abort，减小体积
-
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = "symbols"
+panic = "abort"

@@ -37,9 +37,15 @@ pub fn run() {
         }
     };
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_notification::init())
+    let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init());
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        builder = builder.plugin(tauri_plugin_notification::init());
+    }
+
+    builder
         .manage(Mutex::new(app_config))
         .manage(Mutex::new(ai_config))
         .manage(Mutex::new(cost_tracker))
