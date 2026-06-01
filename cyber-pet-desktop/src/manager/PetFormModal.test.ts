@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { validatePetName } from './PetFormModal';
+import { validatePetName } from '../services/validation';
 
 describe('validatePetName', () => {
   it('正常名称返回 null', () => {

@@ -29,4 +29,18 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+
+  // 生产构建优化
+  build: {
+    // Tauri webview 支持现代 ES，减小 polyfill 体积
+    target: 'esnext',
+    // 将 Pixi.js 拆分为独立 chunk，利用浏览器缓存
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          pixi: ['pixi.js'],
+        },
+      },
+    },
+  },
 }));

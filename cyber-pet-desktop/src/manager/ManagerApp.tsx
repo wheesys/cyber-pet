@@ -48,6 +48,7 @@ export function ManagerApp() {
 
   // 初载 + 监听 `pets-changed` 事件。
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Tauri event subscription + initial load
     loadPets();
     let unlisten: UnlistenFn | undefined;
     listen<PetsChangedEvent>('pets-changed', (event) => {

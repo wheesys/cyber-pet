@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android%20%7C%20iOS-lightgrey.svg)](https://github.com/wheesys/cyber-pet)
-[![Status](https://img.shields.io/badge/status-设计阶段-yellow.svg)](https://github.com/wheesys/cyber-pet)
+[![Status](https://img.shields.io/badge/status-MVP%20v0.1.0-brightgreen.svg)](https://github.com/wheesys/cyber-pet)
 
 ---
 
@@ -67,30 +67,33 @@
 - [技术选型决策](doc/04-技术选型决策.md)
 - [架构设计文档](doc/05-架构设计文档.md)
 - [数据库设计文档](doc/06-数据库设计文档.md)
+- [阶段7基础工具总结](doc/10-阶段7基础工具完成总结.md)
+- [MVP发布说明](doc/11-MVP发布说明.md)
 - [待办事项](doc/00-待办事项.md)
+- [更新日志](CHANGELOG.md)
 
 ---
 
 ## 🗺️ 路线图
 
-### ✅ 已完成
-- [x] 项目启动
-- [x] 技术选型与架构设计
-- [x] 数据库设计
+### ✅ v0.1.0 MVP（2026-06-01）
+- [x] 项目启动与技术选型
+- [x] 架构设计（Tauri 2.0 + React + Pixi.js）
+- [x] SQLite 数据库设计
+- [x] 窗口管理（透明无边框、置顶、托盘）
+- [x] 配置管理（TOML 便携模式）
+- [x] 日志系统（tracing 按天轮转）
+- [x] 宠物系统（CRUD + 状态机 + 动画引擎60fps）
+- [x] 宠物管理界面（主从布局）
+- [x] AI 集成（三层架构 + 流式对话 + 历史记录）
+- [x] 基础工具（文件管理 + 系统信息 + 进程列表 + 通知）
+- [x] 测试与优化（Rust 34 + Vitest 23，二进制7.2MB）
 
-### 🔄 进行中
-- [ ] UI/UX设计
-- [ ] 开发环境搭建
-
-### 📅 计划中
-- [ ] 桌面端MVP开发（4周）
-- [ ] Android端开发（10周）
-- [ ] iOS端开发（10周）
-- [ ] P2P网络集成（2周）
-- [ ] AI服务集成（1周）
-- [ ] 测试与优化（2周）
-- [ ] Beta测试（1个月）
-- [ ] 正式发布
+### 📅 v0.2.0 规划
+- [ ] 多宠物互动系统
+- [ ] P2P 网络（libp2p）
+- [ ] 账户体系
+- [ ] 移动端（Android/iOS）
 
 ---
 
@@ -106,6 +109,29 @@
 - **总计**: ¥1,800/年
 
 ---
+
+## 🚀 快速开始
+
+### 环境要求
+- Rust 1.80+
+- Node.js 20+
+- pnpm
+- Linux: webkit2gtk-4.1, libayatana-appindicator
+
+### 开发运行
+```bash
+cd cyber-pet-desktop
+pnpm install
+cd src-tauri && cargo build && cd ..
+pnpm tauri dev
+```
+
+### 生产构建
+```bash
+cd cyber-pet-desktop
+pnpm tauri build
+# 输出: src-tauri/target/release/cyber-pet-desktop
+```
 
 ## 🤝 贡献
 

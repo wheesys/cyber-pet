@@ -21,7 +21,9 @@ export function ToolsPanel() {
   const loadInfo = async () => {
     try {
       setInfo(await invoke<SysInfo>('get_system_info'));
-    } catch {}
+    } catch {
+      console.error('获取系统信息失败');
+    }
   };
 
   const search = async () => {

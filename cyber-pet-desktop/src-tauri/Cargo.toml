@@ -39,3 +39,11 @@ sysinfo = "0.32"
 # 系统通知
 tauri-plugin-notification = "2"
 
+[profile.release]
+# 优化二进制体积（绿色便携要求），同时保持合理性能
+opt-level = "s"        # 优化体积优先
+lto = true             # 链接时优化，显著减小体积
+codegen-units = 1      # 单代码生成单元，更激进的优化
+strip = "symbols"      # 去除调试符号
+panic = "abort"        # panic 直接 abort，减小体积
+

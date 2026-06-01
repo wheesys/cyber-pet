@@ -4,6 +4,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import './App.css';
 import { AnimationEngine } from './pixi/animation-engine';
 import { ChatBubble } from './components/ChatBubble';
+import { PermissionDialog } from './components/PermissionDialog';
 import { ChatInput } from './components/ChatInput';
 import { Toast } from './components/Toast';
 import { aiService } from './services/ai-service';
@@ -236,12 +237,19 @@ function App() {
       });
     } catch (err) {
       setBubble({
-        text: `(AI 请求失败: ${err})`,
+        text: errorMessage(err),
         x: baseX,
         y: baseY,
       });
     }
     setChatting(false);
+  };
+
+  /** 用户友好的错误消息格式化。 */
+  const errorMessage = (err: unknown): string => {
+    if (err instanceof Error) return err.message;
+    if (typeof err === 'string') return err;
+    return '网络请求失败，请检查 AI 配置或网络连接';
   };
 
   return (
@@ -260,6 +268,15 @@ function App() {
         }
       />
 
+      {/* AI 聊天加载指示器 */}
+      {chatting && (
+        <div className="chat-loading">
+          <span />
+          <span />
+          <span />
+        </div>
+      )}
+
       {/* 对话气泡 */}
       {bubble && (
         <ChatBubble
@@ -274,6 +291,16 @@ function App() {
 
       {/* 通知 */}
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+
+      {/* 空状态提示 */}
+      {!hasPets && (
+        <div className="stage-empty-hint">
+          暂无宠物 — 右键托盘图标打开管理窗口创建
+        </div>
+      )}
+
+      {/* 权限确认弹窗 */}
+      <PermissionDialog />
 
       {/* 对话输入栏 */}
       <ChatInput

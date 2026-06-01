@@ -31,6 +31,7 @@ export function PetDetail({ pet, onEdit, onDelete }: Props) {
   const [state, setState] = useState<PetState | null>(null);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- Tauri event-driven state sync */
     if (!pet?.id) {
       setState(null);
       return;
@@ -38,6 +39,7 @@ export function PetDetail({ pet, onEdit, onDelete }: Props) {
     getPetState(pet.id)
       .then(setState)
       .catch((err) => console.error('获取宠物状态失败:', err));
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [pet?.id]);
 
   // 删除前二次确认（破坏性操作）。

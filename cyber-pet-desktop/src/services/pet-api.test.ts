@@ -95,16 +95,18 @@ describe('AIService', () => {
       },
       judgeComplexity: async () => 'simple' as const,
     };
+    /* eslint-disable @typescript-eslint/no-explicit-any -- test setup accesses private fields */
     (service as any).simple = mockClient;
     (service as any).scheduler = mockClient;
     (service as any).initialized = true;
-
+    /* eslint-enable @typescript-eslint/no-explicit-any */
     const chunks: string[] = [];
     for await (const c of service.chatStream('playful', 'test', 'hi')) {
       chunks.push(c);
     }
 
     expect(chunks).toEqual(['Hello', ' World']);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accessing private cache for test verification
     const cached = (service as any).cache.get(
       'system:你是一只桌面宠物「test」。你古灵精怪、活泼好动，喜欢开玩笑。回复俏皮可爱，适当使用颜文字。|user:hi'
     );
@@ -149,6 +151,7 @@ describe('AIClient', () => {
     });
 
     const result: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- chatStream is protected, accessed for test
     for await (const chunk of (client as any).chatStream([])) {
       result.push(chunk);
     }
@@ -170,7 +173,8 @@ describe('AIClient', () => {
     });
 
     await expect(async () => {
-      for await (const _ of (client as any).chatStream([])) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- test expects throw
+      for await (const _chunk of (client as any).chatStream([])) {
         /* noop */
       }
     }).rejects.toThrow('AI API 错误');

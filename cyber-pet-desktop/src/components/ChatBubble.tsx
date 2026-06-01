@@ -30,6 +30,7 @@ export function ChatBubble({
 
   useEffect(() => {
     if (append) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- streaming text accumulation requires synchronous state update on prop change
       setFullText((prev) => prev + text);
     } else {
       setFullText(text);

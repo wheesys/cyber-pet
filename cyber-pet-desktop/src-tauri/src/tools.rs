@@ -98,7 +98,7 @@ pub fn get_processes() -> Vec<ProcessInfo> {
         .map(|(pid, p)| ProcessInfo {
             pid: pid.as_u32(),
             name: p.name().to_string_lossy().into_owned(),
-            cpu_percent: p.cpu_usage() as f32,
+            cpu_percent: p.cpu_usage(),
             memory_mb: p.memory() as f64 / (1024.0 * 1024.0),
         })
         .collect();

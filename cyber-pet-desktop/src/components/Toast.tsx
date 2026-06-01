@@ -16,7 +16,7 @@ export function Toast({ message, onDone }: Props) {
   }, [onDone]);
 
   return (
-    <div style={s.toast}>
+    <div className="toast-enter" style={s.toast}>
       <span>🔔</span> {message}
     </div>
   );
